@@ -1,0 +1,26 @@
+generator client {
+	provider = "prisma-client"
+	output   = "../generated/prisma"
+}
+
+datasource db {
+	provider = "mysql"
+	url = env("DATABASE_URL")
+}
+
+model User {
+	id    Int     @id @default(autoincrement())
+	nome  String
+	email String  @unique
+	senha String
+	tasks Task[]
+}
+
+model Task {
+	id        Int      @id @default(autoincrement())
+	nome      String
+	descricao String?
+	status    String   @default("pendente")
+	authorId  Int
+	author    User     @relation(fields: [authorId], references: [id])
+}

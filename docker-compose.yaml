@@ -1,0 +1,35 @@
+services:
+  api:
+    build: .
+    container_name: zetta-api-backend
+    ports:
+      - "${PORT}:${PORT}"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - zetta-network
+
+  database:
+    image: mysql:9.1.0
+    container_name: zetta-mysql-db
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
+      - MYSQL_DATABASE=${DB_NAME}
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - zetta-network
+
+networks:
+  zetta-network:
+    driver: bridge
