@@ -8,30 +8,7 @@ import { treeifyError, ZodError } from 'zod';
 
 export const server = Fastify({ logger: true });
 
-server.setErrorHandler((error: any, _, reply) => {
-    server.log.error(error);
-
-    if (error instanceof ZodError) {
-        return reply.status(400).send({
-            message: 'Erro de validação.',
-            errors: treeifyError(error)
-        });
-    }
-
-    if (error.validation) {
-        return reply.status(400).send({
-            message: 'Dados inválidos ou mal formatados.',
-            details: error.validation
-        });
-    }
-
-    reply.status(500).send({ 
-        message: 'Ocorreu um erro interno. Tente novamente mais tarde.' 
-    });
-});
-
-const start = async () => {
-
+export const setupServer = async () => {
     await server.setValidatorCompiler(validatorCompiler);
     await server.setSerializerCompiler(serializerCompiler);
 
@@ -45,20 +22,28 @@ const start = async () => {
         allowedHeaders: ['Content-Type', 'Authorization'],
     });
 
-    await server.register(userRoutes, { prefix: 'users' })
-    await server.register(taskRoutes, { prefix: 'tasks' })
+    await server.register(userRoutes, { prefix: 'users' });
+    await server.register(taskRoutes, { prefix: 'tasks' });
 
-    try {
-        await server.listen({
-            port: Number(process.env.PORT) || 3000,
-            host: '0.0.0.0'
-        });
-
-        console.log(`[INFO] 🚀 Servidor rodando na porta ${process.env.PORT}`);
-    } catch (error) {
+    server.setErrorHandler((error: any, _, reply) => {
         server.log.error(error);
-        process.exit(1);
-    }
-}
 
-start();
+        if (error instanceof ZodError) {
+            return reply.status(400).send({
+                message: 'Erro de validação.',
+                errors: treeifyError(error)
+            });
+        }
+
+        if (error.validation) {
+            return reply.status(400).send({
+                message: 'Dados inválidos ou mal formatados.',
+                details: error.validation
+            });
+        }
+
+        reply.status(500).send({ 
+            message: 'Ocorreu um erro interno. Tente novamente mais tarde.' 
+        });
+    });
+};

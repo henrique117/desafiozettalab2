@@ -1,8 +1,8 @@
 import { FastifyInstance } from "fastify";
 import { ZodTypeProvider } from "fastify-type-provider-zod";
 import authenticate from "../middlewares/auth.middleware";
-import { createTaskSchema, updateTaskSchema } from "../schemas/task.schema";
-import { handleTaskCreate, handleTaskDelete, handleTaskUpdate } from "../controllers/task.controller";
+import { createTaskSchema, getTasksQuerySchema, updateTaskSchema } from "../schemas/task.schema";
+import { handleTaskCreate, handleTaskDelete, handleTasksGet, handleTaskUpdate } from "../controllers/task.controller";
 import z from "zod";
 
 const taskRoutes = async (server: FastifyInstance) => {
@@ -32,6 +32,12 @@ const taskRoutes = async (server: FastifyInstance) => {
             body: updateTaskSchema
         }
     }, handleTaskUpdate);
+
+    serverWithZod.get('/', {
+        schema: {
+            querystring: getTasksQuerySchema
+        }
+    }, handleTasksGet);
 }
 
 export default taskRoutes;

@@ -1,6 +1,6 @@
 import ITask from "../interfaces/Task.interface";
 import prisma from "../lib/prisma";
-import { CreateTaskInput, UpdateTaskInput } from "../schemas/task.schema";
+import { CreateTaskInput, GetTasksQuery, UpdateTaskInput } from "../schemas/task.schema";
 
 export const createTask = async (input: CreateTaskInput, userId: number): Promise<ITask> => {
     const { nome, descricao, status } = input;
@@ -61,3 +61,22 @@ export const updateTask = async (taskId: number, userId: number, input: UpdateTa
 
     return updatedTask;
 }
+
+export const getTasks = async (userId: number, query: GetTasksQuery): Promise<ITask[]> => {
+    const { id, status, search } = query;
+
+    const tasks: ITask[] = await prisma.task.findMany({
+        where: {
+            authorId: userId,
+            id: id,
+            status: status,
+            OR: search ? [
+                { nome: { contains: search } },
+                { descricao: { contains: search } }
+            ] : undefined
+        },
+        orderBy: { id: 'desc' }
+    });
+
+    return tasks;
+};
