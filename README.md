@@ -1,6 +1,3 @@
-# coding: utf-8
-
-"""
 # 📚 API Zetta - Gerenciamento de Tarefas
 
 Esta API foi desenvolvida para o Desafio 2 da **Zetta Lab**. A aplicação utiliza **Fastify** para o servidor, **Prisma** como ORM, **Zod** para validações e **MySQL** como banco de dados dentro de containers Docker.
@@ -42,23 +39,35 @@ A maioria das rotas de tarefas requer autenticação via **JWT (JSON Web Token)*
 ### `POST /users/register`
 Cria uma nova conta de usuário.
 
-**Body (JSON):**
+**Parâmetros do Corpo (JSON):**
+| Campo | Tipo | Obrigatório | Descrição |
+| :--- | :--- | :--- | :--- |
+| `nome` | string | Sim | Mín. 3 e Máx. 45 caracteres. |
+| `email` | string | Sim | E-mail válido e único. |
+| `senha` | string | Sim | Mín. 6 e Máx. 100 caracteres. |
+
+**Exemplo de Resposta (201 Created):**
 ```json
 {
+  "id": 1,
   "nome": "Henrique",
-  "email": "henrique@ufla.br",
-  "senha": "password123"
+  "email": "henrique@ufla.br"
 }
 ```
 
 ### `POST /users/login`
 Autentica o usuário e retorna o token JWT.
 
-**Body (JSON):**
+**Parâmetros do Corpo (JSON):**
+| Campo | Tipo | Obrigatório | Descrição |
+| :--- | :--- | :--- | :--- |
+| `email` | string | Sim | E-mail cadastrado. |
+| `senha` | string | Sim | Senha do usuário. |
+
+**Exemplo de Resposta (200 OK):**
 ```json
 {
-  "email": "henrique@ufla.br",
-  "senha": "password123"
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
 ```
 
@@ -66,37 +75,90 @@ Autentica o usuário e retorna o token JWT.
 
 ## 📝 Tarefas (`/tasks`)
 
-Gerenciamento completo das tarefas. O sistema implementa isolamento de dados: apenas visualiza e edita o que você mesmo criou.
+O sistema implementa isolamento de dados: você só interage com as tarefas que você mesmo criou.
 
 ### `POST /tasks`
 Cria uma nova tarefa.
 **Autenticação:** Obrigatória.
 
-**Body (JSON):**
+**Parâmetros do Corpo (JSON):**
+| Campo | Tipo | Obrigatório | Descrição |
+| :--- | :--- | :--- | :--- |
+| `nome` | string | Sim | Mín. 3 e Máx. 25 caracteres. Aceita acentos. |
+| `descricao` | string | Não | Máx. 191 caracteres. |
+| `status` | string/bool| Não | "pendente", "concluida" ou boolean. Padrão: "pendente". |
+
+**Exemplo de Resposta (201 Created):**
 ```json
 {
+  "id": 10,
   "nome": "Estudar para IHC",
-  "descricao": "Revisar heurísticas de Nielsen e acessibilidade",
-  "status": "pendente"
+  "descricao": "Revisar heurísticas de Nielsen",
+  "status": "pendente",
+  "authorId": 1
 }
 ```
-> **Diferencial:** O campo `nome` aceita acentuação e cedilha (ex: "Organização"), e o campo `status` aceita `"pendente"`, `"concluida"`, `0/1` ou `true/false`.
 
 ### `GET /tasks`
 Lista as tarefas do usuário autenticado.
 **Autenticação:** Obrigatória.
 
-**Query Parameters (Opcionais):**
-* `status`: Filtra por status (pendente/concluida).
-* `search`: Busca o termo no nome ou na descrição.
+**Parâmetros de Busca (Query String):**
+| Parâmetro | Tipo | Obrigatório | Descrição |
+| :--- | :--- | :--- | :--- |
+| `id` | number | Não | Busca por um ID específico. |
+| `search` | string | Não | Termo para busca no nome ou descrição. |
+| `status` | string/num | Não | "pendente", "concluida", 0 ou 1. |
+
+**Exemplo de Resposta (200 OK):**
+```json
+[
+  {
+    "id": 10,
+    "nome": "Estudar para IHC",
+    "descricao": "Revisar heurísticas de Nielsen",
+    "status": "pendente",
+    "authorId": 1
+  }
+]
+```
 
 ### `PATCH /tasks/:id`
 Atualiza os dados de uma tarefa existente.
 **Autenticação:** Obrigatória.
 
+**Parâmetros do Corpo (JSON):** Todos os campos são opcionais.
+| Campo | Tipo | Descrição |
+| :--- | :--- | :--- |
+| `nome` | string | Novo nome da tarefa. |
+| `descricao` | string | Nova descrição. |
+| `status` | string/bool| Novo status. |
+
+**Exemplo de Resposta (200 OK):**
+```json
+{
+  "id": 10,
+  "nome": "Estudar para IHC - Finalizado",
+  "descricao": "Revisar heurísticas de Nielsen",
+  "status": "concluida",
+  "authorId": 1
+}
+```
+
 ### `DELETE /tasks/:id`
-Remove uma tarefa permanentemente do banco de dados.
+Remove uma tarefa permanentemente.
 **Autenticação:** Obrigatória.
+
+**Exemplo de Resposta (200 OK):**
+```json
+{
+  "id": 10,
+  "nome": "Estudar para IHC - Finalizado",
+  "descricao": "Revisar heurísticas de Nielsen",
+  "status": "concluida",
+  "authorId": 1
+}
+```
 
 ---
 
