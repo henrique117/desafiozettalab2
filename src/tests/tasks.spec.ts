@@ -6,15 +6,44 @@ import jwt from 'jsonwebtoken';
 
 describe('Integração - Tasks', () => {
     let token: string;
+    let userId: number;
+
+    const TEST_EMAIL_DOMAIN = '@zetta.com';
 
     beforeAll(async () => {
         await setupServer()
         await server.ready();
+
+        const testUser = await prisma.user.create({
+            data: {
+                nome: "Henrique Teste",
+                email: `test-${Date.now()}${TEST_EMAIL_DOMAIN}`,
+                senha: "password_hash_real" 
+            }
+        });
+
+        userId = testUser.id;
+
         const secret = process.env.JWT_SECRET || 'zetta';
-        token = jwt.sign({ id: 1 }, secret);
+        token = jwt.sign({ id: userId }, secret);
     });
 
     afterAll(async () => {
+        await prisma.task.deleteMany({
+            where: {
+                OR: [
+                    { nome: { contains: 'Teste' } },
+                    { nome: { contains: 'Automação' } }
+                ]
+            }
+        });
+
+        await prisma.user.deleteMany({
+            where: {
+                email: { contains: TEST_EMAIL_DOMAIN }
+            }
+        });
+
         await prisma.$disconnect();
         await server.close();
     });
@@ -24,7 +53,7 @@ describe('Integração - Tasks', () => {
             .post('/tasks')
             .set('Authorization', `Bearer ${token}`)
             .send({
-                nome: "Tarefa de Integração",
+                nome: "Tarefa de Integração Teste",
                 descricao: "Testando fluxo completo",
                 status: "pendente"
             });
@@ -37,7 +66,7 @@ describe('Integração - Tasks', () => {
         });
 
         expect(taskNoBanco).not.toBeNull();
-        expect(taskNoBanco?.nome).toBe("Tarefa de Integração");
+        expect(taskNoBanco?.nome).toBe("Tarefa de Integração Teste");
     });
 
     it('Deve filtrar tarefas por status usando query params (1 para concluída)', async () => {
