@@ -3,6 +3,7 @@ import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod
 import cors from '@fastify/cors';
 import fastifyJwt from '@fastify/jwt';
 import userRoutes from './routes/user.route';
+import taskRoutes from './routes/task.route';
 import { treeifyError, ZodError } from 'zod';
 
 export const server = Fastify({ logger: true });
@@ -45,6 +46,7 @@ const start = async () => {
     });
 
     await server.register(userRoutes, { prefix: 'users' })
+    await server.register(taskRoutes, { prefix: 'tasks' })
 
     try {
         await server.listen({

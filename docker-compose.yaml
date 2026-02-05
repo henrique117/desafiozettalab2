@@ -1,6 +1,10 @@
 services:
   api:
     build: .
+    volumes:
+      - .:/api
+      - /api/node_modules
+      - /api/dist
     container_name: zetta-api-backend
     ports:
       - "${PORT}:${PORT}"
@@ -23,6 +27,8 @@ services:
       - MYSQL_DATABASE=${DB_NAME}
     ports:
       - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
@@ -34,3 +40,6 @@ services:
 networks:
   zetta-network:
     driver: bridge
+
+volumes:
+  mysql_data:
