@@ -8,7 +8,7 @@ export const createTaskSchema = z.object({
     nome: z.string({ error: "O nome é obrigatório e deve ser um texto." })
         .min(3, "O nome da tarefa deve ter pelo menos 3 caracteres.")
         .max(25, "O nome da tarefa deve conter no máximo 25 caracteres.")
-        .regex(/^[a-zA-Z0-9_ \u00C0-\u00FF]+$/, "O nome contém caracteres inválidos."),
+        .regex(/^[a-zA-Z0-9_ a-zA-ZÀ-ÿ ]+$/, "O nome contém caracteres inválidos."),
 
     descricao: z.string({ error: "A descrição deve ser um texto." })
         .max(191, "A descrição deve conter no máximo 191 caracteres.")
@@ -82,3 +82,13 @@ export const getTasksQuerySchema = z.object({
 });
 
 export type GetTasksQuery = z.infer<typeof getTasksQuerySchema>;
+
+export const taskResponseSchema = z.object({
+    id: z.number(),
+    nome: z.string(),
+    descricao: z.string().nullable(),
+    status: z.boolean().transform((val) => (val ? 'concluida' : 'pendente')),
+    authorId: z.number()
+});
+
+export const listTasksResponseSchema = z.array(taskResponseSchema);

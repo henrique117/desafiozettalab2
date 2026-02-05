@@ -63,7 +63,7 @@ export const handleTasksGet = async (
     try {
         const { id: userId } = request.user as { id: number };
         const tasks = await getTasks(userId, request.query);
-        return reply.send(tasks);
+        return reply.code(200).send(tasks);
     } catch (error: any) {
         const statusCode = error.message === 'Unauthorized' ? 403 : 400;
         return reply.code(statusCode).send({ message: "Erro ao listar tarefas." });
