@@ -29,7 +29,7 @@ export const handleUserLogin = async (
             expiresIn: '7d'
         });
 
-        return reply.send({ token, user });
+        return reply.send({ token, user: user });
     } catch (error) {
         return reply.code(401).send(error);
     }
