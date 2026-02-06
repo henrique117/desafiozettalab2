@@ -17,12 +17,12 @@ make setup
 ### 2. Comandos Disponíveis
 * `make run`: Inicia a aplicação e exibe os logs no terminal (Foreground).
 * `make run-bg`: Inicia a aplicação em segundo plano (Background).
-* `make restart`: Reinicia a aplicação em segundo plano (Background).
+* `make restart`: Reinicia a aplicação (stop + run-bg).
 * `make stop`: Para todos os serviços ativos.
 * `make test`: Executa a suíte de testes unitários e de integração via Vitest.
 * `make migrate`: Aplica as alterações de schema no banco de dados MySQL.
 * `make logs`: Exibe os logs em tempo real da API.
-* `make clean`: Remove containers e deleta os volumes do banco de dados (reset total dos dados).
+* `make clean`: Remove containers e deleta os volumes do banco (reset total).
 
 ---
 
@@ -44,14 +44,24 @@ Cria uma nova conta de usuário.
 | Campo | Tipo | Obrigatório | Descrição |
 | :--- | :--- | :--- | :--- |
 | `nome` | string | Sim | Mín. 3 e Máx. 45 caracteres. |
-| `email` | string | Sim | E-mail válido e único. |
+| `email` | string | Sim | E-mail válido e único no sistema. |
 | `senha` | string | Sim | Mín. 6 e Máx. 100 caracteres. |
 
-**Exemplo de Resposta (201 Created):**
+**Exemplo de Uso:**
+- **Request:** `POST /users/register`
+- **Body:**
+```json
+{
+  "nome": "Henrique Silva",
+  "email": "henrique@ufla.br",
+  "senha": "password123"
+}
+```
+- **Response (201 Created):**
 ```json
 {
   "id": 1,
-  "nome": "Henrique",
+  "nome": "Henrique Silva",
   "email": "henrique@ufla.br"
 }
 ```
@@ -65,10 +75,24 @@ Autentica o usuário e retorna o token JWT.
 | `email` | string | Sim | E-mail cadastrado. |
 | `senha` | string | Sim | Senha do usuário. |
 
-**Exemplo de Resposta (200 OK):**
+**Exemplo de Uso:**
+- **Request:** `POST /users/login`
+- **Body:**
 ```json
 {
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  "email": "henrique@ufla.br",
+  "senha": "password123"
+}
+```
+- **Response (200 OK):**
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": 1,
+    "nome": "Henrique Silva",
+    "email": "henrique@ufla.br"
+  }
 }
 ```
 
@@ -79,8 +103,7 @@ Autentica o usuário e retorna o token JWT.
 O sistema implementa isolamento de dados: você só interage com as tarefas que você mesmo criou.
 
 ### `POST /tasks`
-Cria uma nova tarefa.
-**Autenticação:** Obrigatória.
+Cria uma nova tarefa para o usuário logado.
 
 **Parâmetros do Corpo (JSON):**
 | Campo | Tipo | Obrigatório | Descrição |
@@ -89,20 +112,29 @@ Cria uma nova tarefa.
 | `descricao` | string | Não | Máx. 191 caracteres. |
 | `status` | string/bool| Não | "pendente", "concluida" ou boolean. Padrão: "pendente". |
 
-**Exemplo de Resposta (201 Created):**
+**Exemplo de Uso:**
+- **Request:** `POST /tasks`
+- **Body:**
+```json
+{
+  "nome": "Estudar IHC",
+  "descricao": "Revisar Heurísticas de Nielsen",
+  "status": "pendente"
+}
+```
+- **Response (201 Created):**
 ```json
 {
   "id": 10,
-  "nome": "Estudar para IHC",
-  "descricao": "Revisar heurísticas de Nielsen",
+  "nome": "Estudar IHC",
+  "descricao": "Revisar Heurísticas de Nielsen",
   "status": "pendente",
   "authorId": 1
 }
 ```
 
 ### `GET /tasks`
-Lista as tarefas do usuário autenticado.
-**Autenticação:** Obrigatória.
+Lista as tarefas com suporte a filtros.
 
 **Parâmetros de Busca (Query String):**
 | Parâmetro | Tipo | Obrigatório | Descrição |
@@ -111,51 +143,62 @@ Lista as tarefas do usuário autenticado.
 | `search` | string | Não | Termo para busca no nome ou descrição. |
 | `status` | string/num | Não | "pendente", "concluida", 0 ou 1. |
 
-**Exemplo de Resposta (200 OK):**
+**Exemplo de Uso (Filtros):**
+- **Request:** `GET /tasks?status=concluida&search=IHC`
+- **Response (200 OK):**
 ```json
 [
   {
     "id": 10,
-    "nome": "Estudar para IHC",
-    "descricao": "Revisar heurísticas de Nielsen",
-    "status": "pendente",
+    "nome": "Estudar IHC",
+    "descricao": "Revisar Heurísticas de Nielsen",
+    "status": "concluida",
     "authorId": 1
   }
 ]
 ```
 
 ### `PATCH /tasks/:id`
-Atualiza os dados de uma tarefa existente.
-**Autenticação:** Obrigatória.
+Atualiza campos específicos de uma tarefa existente.
 
-**Parâmetros do Corpo (JSON):** Todos os campos são opcionais.
-| Campo | Tipo | Descrição |
-| :--- | :--- | :--- |
-| `nome` | string | Novo nome da tarefa. |
-| `descricao` | string | Nova descrição. |
-| `status` | string/bool| Novo status. |
+**Parâmetros do Corpo (JSON):**
+| Campo | Tipo | Obrigatório | Descrição |
+| :--- | :--- | :--- | :--- |
+| `nome` | string | Não | Novo nome da tarefa. |
+| `descricao` | string | Não | Nova descrição. |
+| `status` | string/bool| Não | Novo status (pendente/concluida). |
 
-**Exemplo de Resposta (200 OK):**
+**Exemplo de Uso:**
+- **Request:** `PATCH /tasks/10`
+- **Body:**
+```json
+{
+  "nome": "Estudar IHC - Revisado",
+  "status": "concluida"
+}
+```
+- **Response (200 OK):**
 ```json
 {
   "id": 10,
-  "nome": "Estudar para IHC - Finalizado",
-  "descricao": "Revisar heurísticas de Nielsen",
+  "nome": "Estudar IHC - Revisado",
+  "descricao": "Revisar Heurísticas de Nielsen",
   "status": "concluida",
   "authorId": 1
 }
 ```
 
 ### `DELETE /tasks/:id`
-Remove uma tarefa permanentemente.
-**Autenticação:** Obrigatória.
+Remove uma tarefa e retorna o objeto deletado.
 
-**Exemplo de Resposta (200 OK):**
+**Exemplo de Uso:**
+- **Request:** `DELETE /tasks/10`
+- **Response (200 OK):**
 ```json
 {
   "id": 10,
-  "nome": "Estudar para IHC - Finalizado",
-  "descricao": "Revisar heurísticas de Nielsen",
+  "nome": "Estudar IHC - Revisado",
+  "descricao": "Revisar Heurísticas de Nielsen",
   "status": "concluida",
   "authorId": 1
 }
