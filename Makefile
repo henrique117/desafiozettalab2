@@ -1,11 +1,17 @@
 COMPOSE = docker compose
 EXEC_API = $(COMPOSE) exec api
 
+.PHONY: run run-bg restart stop clean test migrate setup logs
+
 run:
 	$(COMPOSE) up --build
 
 run-bg:
 	$(COMPOSE) up --build -d
+
+restart:
+	$(MAKE) stop
+	$(MAKE) run-bg
 
 stop:
 	$(COMPOSE) down
