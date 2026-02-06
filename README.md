@@ -17,6 +17,7 @@ make setup
 ### 2. Comandos Disponíveis
 * `make run`: Inicia a aplicação e exibe os logs no terminal (Foreground).
 * `make run-bg`: Inicia a aplicação em segundo plano (Background).
+* `make restart`: Reinicia a aplicação em segundo plano (Background).
 * `make stop`: Para todos os serviços ativos.
 * `make test`: Executa a suíte de testes unitários e de integração via Vitest.
 * `make migrate`: Aplica as alterações de schema no banco de dados MySQL.
