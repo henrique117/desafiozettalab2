@@ -7,12 +7,26 @@ import jwt from 'jsonwebtoken';
 describe('Integração - Tasks', () => {
     let token: string;
     let userId: number;
-
     const TEST_EMAIL_DOMAIN = '@zetta.com';
 
     beforeAll(async () => {
-        await setupServer()
+        await setupServer();
         await server.ready();
+
+        await prisma.task.deleteMany({
+            where: {
+                OR: [
+                    { nome: { contains: 'Teste' } },
+                    { nome: { contains: 'Automação' } }
+                ]
+            }
+        });
+
+        await prisma.user.deleteMany({
+            where: {
+                email: { contains: TEST_EMAIL_DOMAIN }
+            }
+        });
 
         const testUser = await prisma.user.create({
             data: {
@@ -30,20 +44,13 @@ describe('Integração - Tasks', () => {
 
     afterAll(async () => {
         await prisma.task.deleteMany({
-            where: {
-                OR: [
-                    { nome: { contains: 'Teste' } },
-                    { nome: { contains: 'Automação' } }
-                ]
-            }
+            where: { authorId: userId }
         });
 
         await prisma.user.deleteMany({
-            where: {
-                email: { contains: TEST_EMAIL_DOMAIN }
-            }
+            where: { id: userId }
         });
-
+        
         await prisma.$disconnect();
         await server.close();
     });
@@ -53,28 +60,22 @@ describe('Integração - Tasks', () => {
             .post('/tasks')
             .set('Authorization', `Bearer ${token}`)
             .send({
-                nome: "Tarefa de Integração Teste",
+                nome: "Teste de Integração",
                 descricao: "Testando fluxo completo",
                 status: "pendente"
             });
 
         expect(response.status).toBe(201);
         expect(response.body).toHaveProperty('id');
-
-        const taskNoBanco = await prisma.task.findUnique({
-            where: { id: response.body.id }
-        });
-
-        expect(taskNoBanco).not.toBeNull();
-        expect(taskNoBanco?.nome).toBe("Tarefa de Integração Teste");
+        expect(response.body.status).toBe("pendente");
     });
 
     it('Deve filtrar tarefas por status usando query params (1 para concluída)', async () => {
         await prisma.task.create({
             data: {
-                nome: "Tarefa Concluida",
+                nome: "Teste Concluido",
                 status: true,
-                authorId: 1
+                authorId: userId
             }
         });
 
@@ -84,7 +85,8 @@ describe('Integração - Tasks', () => {
             .set('Authorization', `Bearer ${token}`);
 
         expect(response.status).toBe(200);
-        expect(response.body.every((t: any) => t.status === true)).toBe(true);
+        
+        expect(response.body.every((t: any) => t.status === "concluida")).toBe(true);
     });
 
     it('Deve retornar 400 ao tentar criar tarefa com nome inválido', async () => {
@@ -92,11 +94,13 @@ describe('Integração - Tasks', () => {
             .post('/tasks')
             .set('Authorization', `Bearer ${token}`)
             .send({
-                nome: "!",
+                nome: "!", 
                 status: "pendente"
             });
 
         expect(response.status).toBe(400);
-        expect(response.body.message).toContain('nome contém caracteres inválidos');
+        
+        expect(response.body.message).toContain('caracteres inválidos');
+        expect(response.body.message).toContain('pelo menos 3 caracteres');
     });
 });

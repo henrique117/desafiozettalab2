@@ -7,7 +7,7 @@ export const handleUserRegister = async (
     reply: FastifyReply
 ) => {
     try {
-        const user = await createUser(request.body);
+        const { senha, ...user } = await createUser(request.body);
         return reply.code(201).send(user);
     } catch (error) {
         return reply.code(401).send(error);
